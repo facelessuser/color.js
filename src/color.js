@@ -524,8 +524,22 @@ let _  = Color;
 _.defineCoordAccessors("XYZ", ["X", "Y", "Z"]);
 
 _.spaces = {};
+// whitepoint values from ASTM E308-01, 10nm spacing, 1931 2 degree observer
+// all normalized to Y (luminance) = 1.00000
+// Illuminant A is a tungsten electric light, giving a very warm, orange light.
+_.A  = new Color("XYZ", [1.09850, 1.00000, 0.35585]);
+// Illuminant C was an early approximation to daylight: illuminant A with a blue filter.
+_.C = new Color("XYZ", [0.98074, 1.000000, 1.18232]);
+// The daylight series of illuminants simulate natural daylight.
+// The color temperature (in degrees Kelvin) ranges from
+// cool, overcast daylight (D50) to bright, direct sunlight (D65).
 _.D50 = new Color("XYZ", [0.96422, 1.00000, 0.82521]);
+_.D55 = new Color("XYZ", [0.95682, 1.00000, 0.92149]);
 _.D65 = new Color("XYZ", [0.95047, 1.00000, 1.08883]);
 _.D65.white = _.D65;
-
+_.D75 = new Color("XYZ", [0.94972, 1.00000, 1.22638]);
+// The F series of illuminants represent flourescent lights
+_.F2  = new Color("XYZ", [0.99186, 1.00000, 67.393]);
+_.F7  = new Color("XYZ", [0.95041, 1.00000, 1.08747]);
+_.F11  = new Color("XYZ", [1.00962, 1.00000, 0.64350]);
 export {util};
