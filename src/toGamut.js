@@ -195,24 +195,24 @@ export function chromaReductionCSS (
 		return to(origin, space);
 	}
 
-	const originSpace = to(origin, ColorSpace.get(mapSpace));
-	let L = originSpace.coords[indexL];
+	const mappingSpace = to(origin, ColorSpace.get(mapSpace));
+	let L = mappingSpace.coords[indexL];
 
 	// return media white or black, if lightness is out of range
 	// XYZ is always available and is a safe, generic black and white to use.
 	if (L >= maxL) {
-		const white = to({space: "xyz", coords: COLORS.white}, space);
+		const white = to(COLORS.WHITE, space);
 		white.alpha = origin.alpha;
 		return to(white, space);
 	}
 	if (L <= minL) {
-		const black = to({space: "xyz", coords: COLORS.black}, space);
+		const black = to(COLORS.BLACK, space);
 		black.alpha = origin.alpha;
 		return to(black, space);
 	}
 
-	if (inGamut(originSpace, space, space, { epsilon: 0 })) {
-		return to(originSpace, space);
+	if (inGamut(mappingSpace, space, { epsilon: 0 })) {
+		return to(mappingSpace, space);
 	}
 
 	function clip (_color) {
@@ -233,7 +233,7 @@ export function chromaReductionCSS (
 		return destColor;
 	}
 	let min = 0;
-	let max = originSpace.coords[indexC];
+	let max = mappingSpace.coords[indexC];
 
 	let min_inGamut = true;
 	let clipped = clip(clone(origin_OKLCH));
@@ -241,7 +241,8 @@ export function chromaReductionCSS (
 
 	while ((max - min) > threshold) {
 		const chroma = (min + max) / 2;
-		current = clone(originSpace);
+		console.log(mappingSpace)
+		current = clone(mappingSpace);
 		current.coords[indexC] = chroma;
 		if (min_inGamut && inGamut(current, space, { epsilon: 0 })) {
 			min = chroma;
