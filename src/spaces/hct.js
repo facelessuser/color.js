@@ -9,15 +9,27 @@ const ε = 216/24389;  // 6^3/29^3 == (24/116)^3
 const κ = 24389/27;   // 29^3/3^3
 
 function toLstar (y) {
+	// Convert XYZ Y to L*
+
 	const fy = (y > ε) ? Math.cbrt(y) : (κ * y + 16) / 116;
 	return (116.0 * fy) - 16.0;
 }
 
 function fromLstar (lstar) {
+	// Convert L* back to XYZ Y
+
 	return (lstar > 8) ?  Math.pow((lstar + 16) / 116, 3) : lstar / κ;
 }
 
 function fromHct (coords, env) {
+	// Use Newton's method to try and converge as quick as possible or converge
+	// as close as we can. If we don't converge in about 7 iterations, we will
+	// instead correct the Y in XYZ and re-calculate the J. This will
+	// incrementally get our J closer, but slower. If we do not converge, we
+	// will do a final round with Newton's method one last time with the more
+	// accurate J. If, for whatever reason, we cannot achieve the accuracy we
+	// seek in the allotted iterations, just return the closest we were able to
+	// get.
 
 	// Threshold of how close is close enough
 	const threshold = 2e-8;
@@ -66,16 +78,14 @@ function fromHct (coords, env) {
 			last = delta;
 		}
 
-		// Use Newton Raphson method to see if we can quickly converge
+		// Use Newton's method to see if we can quickly converge
 		// or get as close as we can.
 		if ((attempt < 7 || attempt >= 13) && xyz[1] !== 0) {
-			/*
-			  f(j_root) = (j ** (1 / 2)) * 0.1
-			  f(j) = ((f(j_root) * 100) ** 2) / j - 1 = 0
-			  f(j_root) = Y = y / 100
-			  f(j) = (y ** 2) / j - 1
-			  f'(j) = (2 * y) / j
-			*/
+			// f(j_root) = (j ** (1 / 2)) * 0.1
+			// f(j) = ((f(j_root) * 100) ** 2) / j - 1 = 0
+			// f(j_root) = Y = y / 100
+			// f(j) = (y ** 2) / j - 1
+			// f'(j) = (2 * y) / j
 			j = j - (xyz[1] - y) * j / (2 * xyz[1]);
 		}
 
@@ -94,6 +104,7 @@ function fromHct (coords, env) {
 }
 
 function toHct (xyz, env) {
+	// Calculate HCT by taking the L* of CIE LCh D65 and CAM16 chroma and hue.
 
 	const t = toLstar(xyz[1]);
 	if (t === 0.0) {
@@ -103,7 +114,8 @@ function toHct (xyz, env) {
 	return [cam16.h, cam16.C, constrain(t)];
 }
 
-const viewingConditions = environment(
+// Pre-calculate everything we can with the viewing conditions
+export const viewingConditions = environment(
 	white, 200 / Math.PI * fromLstar(50.0),
 	fromLstar(50.0) * 100,
 	'average',

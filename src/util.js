@@ -200,10 +200,7 @@ export function spow(base, exp) {
 }
 
 export function zdiv(n, d) {
-	if (d === 0) {
-		return 0;
-	}
-	return n / d;
+	return (d === 0) ? 0.0 : n / d;
 }
 
 export function bisectLeft(arr, value, lo=0, hi=arr.length) {

@@ -59,7 +59,6 @@ export function unadapt (adapted, fl) {
 	});
 }
 
-
 export function hueQuadrature (h) {
 	let hp = constrain(h)
 	if (hp <= hueQuadMap.h[0]) {
@@ -75,18 +74,27 @@ export function hueQuadrature (h) {
 	return Hi + (100 * t) / (t + (hii - hp) / eii);
 }
 
-
 export function invHueQuadrature (H) {
 	let Hp = ((H % 400 + 400) % 400);
-	const i = math.floor(0.01 * Hp);
+	const i = Math.floor(0.01 * Hp);
 	Hp = Hp % 100;
 	const [hi, hii] = hueQuadMap.h.slice(i, i + 2);
 	const [ei, eii] = hueQuadMap.e.slice(i, i + 2);
 
-	return constrain((Hp * (eii * hi - ei * hii) - 100 * hi * eii) / (Hp * (eii - ei) - 100 * eii));
+	return constrain(
+		(Hp * (eii * hi - ei * hii) - 100 * hi * eii) /
+		(Hp * (eii - ei) - 100 * eii)
+	);
 }
 
-export function environment (refWhite, adaptingLuminance, backgroundLuminance, surround, discounting) {
+export function environment (
+	refWhite,
+	adaptingLuminance,
+	backgroundLuminance,
+	surround,
+	discounting
+) {
+
 	const env = {};
 
 	env.discounting = discounting;
@@ -124,8 +132,14 @@ export function environment (refWhite, adaptingLuminance, backgroundLuminance, s
 	env.nbb = 0.725 * (env.n ** -0.2);
 	env.ncb = env.nbb;
 
-	// Degree of adaptation calculating if not discounting illuminant (assumed eye is fully adapted)
-	const d = (discounting) ? 1 : Math.max(Math.min(f * (1 - 1 / 3.6 * Math.exp((-env.la - 42) / 92)), 1), 0);
+	// Degree of adaptation calculating if not discounting
+	// illuminant (assumed eye is fully adapted)
+	const d = (discounting) ?
+		1 :
+		Math.max(
+			Math.min(f * (1 - 1 / 3.6 * Math.exp((-env.la - 42) / 92)), 1),
+			0
+		);
 	env.dRgb = rgbW.map(c => {
 		return interpolate(1, yw / c, d);
 	});
@@ -145,13 +159,18 @@ export function environment (refWhite, adaptingLuminance, backgroundLuminance, s
 	return env;
 }
 
-
-const viewingConditions = environment(white, 64 / Math.PI * 0.2, 20, 'average', false);
-
+// Pre-calculate everything we can with the viewing conditions
+const viewingConditions = environment(
+	white,
+	64 / Math.PI * 0.2, 20,
+	'average',
+	false
+);
 
 export function fromCam16(cam16, env) {
 
-	// These check ensure one, and only one attribute for a given category is provided.
+	// These check ensure one, and only one attribute for a
+	// given category is provided.
 	if (!((cam16.J !== undefined) ^ (cam16.Q !== undefined))) {
 		throw new Error("Conversion requires one and only one: 'J' or 'Q'");
 	}
@@ -202,7 +221,10 @@ export function fromCam16(cam16, env) {
 	else if (cam16.s !== undefined) {
 		alpha = 0.0004 * (cam16.s ** 2) * (env.aW + 4) / env.c;
 	}
-	const t = spow(alpha * Math.pow(1.64 - Math.pow(0.29, env.n), -0.73), 10 / 9);
+	const t = spow(
+		alpha * Math.pow(1.64 - Math.pow(0.29, env.n), -0.73),
+		10 / 9
+	);
 
 	// Eccentricity
 	const et = 0.25 * (Math.cos(hRad + 2) + 3.8);
@@ -213,7 +235,10 @@ export function fromCam16(cam16, env) {
 	// Calculate red-green and yellow-blue components
 	const p1 = 5e4 / 13 * env.nc * env.ncb * et;
 	const p2 = A / env.nbb;
-	const r = 23 * (p2 + 0.305) * zdiv(t, 23 * p1 + t * (11 * cosh + 108 * sinh));
+	const r = (
+		23 * (p2 + 0.305) *
+		zdiv(t, 23 * p1 + t * (11 * cosh + 108 * sinh))
+	);
 	const a = r * cosh;
 	const b = r * sinh;
 
@@ -257,7 +282,10 @@ export function toCam16 (xyzd65, env) {
 
 	const t = (
 		5e4 / 13 * env.nc * env.ncb *
-		zdiv(et * Math.sqrt(a ** 2 + b ** 2), rgbA[0] + rgbA[1] + 1.05 * rgbA[2] + 0.305)
+		zdiv(
+			et * Math.sqrt(a ** 2 + b ** 2),
+			rgbA[0] + rgbA[1] + 1.05 * rgbA[2] + 0.305
+		)
 	);
 	const alpha = spow(t, 0.9) * Math.pow(1.64 - Math.pow(0.29, env.n), 0.73);
 
@@ -293,6 +321,7 @@ export function toCam16 (xyzd65, env) {
 }
 
 
+// Provided as a way to directly evaluate the CAM16 model
 export default new ColorSpace({
 	id: "cam16-jmh",
 	name: "CAM16-JMh",
@@ -319,7 +348,10 @@ export default new ColorSpace({
 		return [cam16.J, cam16.M, cam16.h];
 	},
 	toBase (cam16) {
-		return fromCam16({J: cam16[0], M: cam16[1], h: cam16[2]}, viewingConditions);
+		return fromCam16(
+			{J: cam16[0], M: cam16[1], h: cam16[2]},
+			viewingConditions
+		);
 	},
 	formats: {
 		color: {}

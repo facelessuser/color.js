@@ -2,6 +2,7 @@ import * as util from "./util.js";
 import ColorSpace from "./space.js";
 import defaults from "./defaults.js";
 import deltaE2000 from "./deltaE/deltaE2000.js";
+import deltaEHCT from "./deltaE/deltaEHCT.js";
 import deltaEOK from "./deltaE/deltaEOK.js";
 import inGamut from "./inGamut.js";
 import to from "./to.js";
@@ -9,6 +10,7 @@ import get from "./get.js";
 import set from "./set.js";
 import clone from "./clone.js";
 import getColor from "./getColor.js";
+import {WHITES} from "./adapt.js";
 
 /**
  * Force coordinates to be in gamut of a certain color space.
@@ -38,6 +40,9 @@ export default function toGamut (color, { method = defaults.gamut_mapping, space
 	let spaceColor = to(color, space);
 	if (method === "css") {
 		spaceColor = to(toGamutCSS(color, { space }), color.space);
+	}
+	else if (method === "hct") {
+		spaceColor = to(toGamutHCT(color, { space }), color.space);
 	}
 	else {
 		if (inGamut(color, space, { epsilon: 0 })) {
@@ -113,12 +118,12 @@ export default function toGamut (color, { method = defaults.gamut_mapping, space
 
 toGamut.returns = "color";
 
-// The reference colors to be used if lightness is out of the range 0-1 in the
-// `Oklch` space. These are created in the `Oklab` space, as it is used by the
-// DeltaEOK calculation, so it is guaranteed to be imported.
+// The reference colors to be used if lightness is out of the range.
+// XYZ D65 is used as a generic space as it is always present and works
+// for any LCh space that is being used as the mapping space.
 const COLORS = {
-	WHITE: { space: "oklab", coords: [1, 0, 0] },
-	BLACK: { space: "oklab", coords: [0, 0, 0] }
+	WHITE: { space: "xyz", coords: WHITES.D65 },
+	BLACK: { space: "xyz", coords: [0, 0, 0] }
 };
 
 /**
@@ -132,31 +137,82 @@ const COLORS = {
  * @returns {Color}
  */
 export function toGamutCSS (origin, { space = origin.space }) {
-	const JND = 0.02;
-	const ε = 0.0001;
+	return chromaReductionCSS(origin, {space: space})
+}
+
+/**
+ * Given a color `origin`, returns a new color that is in gamut using
+ * the CSS Gamut Mapping Algorithm. If `space` is specified, it will be in gamut
+ * in `space`, and returned in `space`. Otherwise, it will be in gamut and
+ * returned in the color space of `origin`.
+ * @param {Object} origin
+ * @param {Object} options
+ * @param {ColorSpace|string} options.space
+ * @returns {Color}
+ */
+export function toGamutHCT (origin, { space = origin.space }) {
+	return chromaReductionCSS(
+		origin,
+		{
+			space: space,
+			ε: 0.001,
+			mapSpace:
+			"hct", deltaE:
+			deltaEHCT, indexL:
+			2, maxL:
+			100
+		}
+	);
+}
+
+/**
+ * A chroma reduction MINDE approach to gamut mapping as specified in the CSS
+ * spec. Given a color `origin`, returns a new color that is in gamut using
+ * the CSS Gamut Mapping Algorithm. If `space` is specified, it will be in
+ * gamut in `space`, and returned in `space`. Otherwise, it will be in gamut
+ * and returned in the color space of `origin`. By default, this conforms
+ * to CSS requirements and uses Oklch, but can be configured to use other
+ * LCh like spaces.
+ */
+export function chromaReductionCSS (
+	origin,
+	{
+		space = origin.space,
+		JND = 0.02,
+		ε = 0.0001,
+		mapSpace = "oklch",
+		deltaE = deltaEOK,
+		indexC = 1,
+		indexL = 0,
+		maxL = 1,
+		minL = 0
+	} = {}
+) {
+	const threshold = 0.0001;
 	space = ColorSpace.get(space);
 
 	if (space.isUnbounded) {
 		return to(origin, space);
 	}
 
-	const origin_OKLCH = to(origin, ColorSpace.get("oklch"));
-	let L = origin_OKLCH.coords[0];
+	const originSpace = to(origin, ColorSpace.get(mapSpace));
+	let L = originSpace.coords[indexL];
 
 	// return media white or black, if lightness is out of range
-	if (L >= 1) {
-		const white = to(COLORS.WHITE, space);
+	// XYZ is always available and is a safe, generic black and white to use.
+	if (L >= maxL) {
+		const white = to({space: "xyz", coords: COLORS.white}, space);
 		white.alpha = origin.alpha;
 		return to(white, space);
 	}
-	if (L <= 0) {
-		const black = to(COLORS.BLACK, space);
+	if (L <= minL) {
+		const black = to({space: "xyz", coords: COLORS.black}, space);
 		black.alpha = origin.alpha;
 		return to(black, space);
 	}
 
-	if (inGamut(origin_OKLCH, space, { epsilon: 0 })) {
-		return to(origin_OKLCH, space);
+	if (inGamut(originSpace, space, space, { epsilon: 0 })) {
+		return to(originSpace, space);
 	}
 
 	function clip (_color) {
@@ -177,16 +233,16 @@ export function toGamutCSS (origin, { space = origin.space }) {
 		return destColor;
 	}
 	let min = 0;
-	let max = origin_OKLCH.coords[1];
+	let max = originSpace.coords[indexC];
 
 	let min_inGamut = true;
 	let clipped = clip(clone(origin_OKLCH));
 	let current;
 
-	while ((max - min) > ε) {
+	while ((max - min) > threshold) {
 		const chroma = (min + max) / 2;
-		current = clone(origin_OKLCH);
-		current.coords[1] = chroma;
+		current = clone(originSpace);
+		current.coords[indexC] = chroma;
 		if (min_inGamut && inGamut(current, space, { epsilon: 0 })) {
 			min = chroma;
 			continue;
