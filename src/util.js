@@ -190,3 +190,31 @@ export function parseCoordGrammar (coordGrammars) {
 		});
 	});
 }
+
+export function copySign (x, y) {
+	return Math.sign(x) === Math.sign(y) ? x : -x;
+}
+
+export function spow(base, exp) {
+	return copySign(Math.abs(base) ** exp, base);
+}
+
+export function zdiv(n, d) {
+	if (d === 0) {
+		return 0;
+	}
+	return n / d;
+}
+
+export function bisectLeft(arr, value, lo=0, hi=arr.length) {
+	while (lo < hi) {
+		const mid = (lo + hi) >> 1;
+		if (arr[mid] < value) {
+			lo = mid + 1;
+		}
+		else {
+			hi = mid;
+		}
+	}
+	return lo;
+}
