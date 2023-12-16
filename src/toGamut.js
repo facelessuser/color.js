@@ -241,7 +241,6 @@ export function chromaReductionCSS (
 
 	while ((max - min) > threshold) {
 		const chroma = (min + max) / 2;
-		console.log(mappingSpace)
 		current = clone(mappingSpace);
 		current.coords[indexC] = chroma;
 		if (min_inGamut && inGamut(current, space, { epsilon: 0 })) {
