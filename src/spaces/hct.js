@@ -111,7 +111,7 @@ function toHct (xyz, env) {
 		return [0.0, 0.0, 0.0];
 	}
 	const cam16 = toCam16(xyz, viewingConditions);
-	return [cam16.h, cam16.C, constrain(t)];
+	return [constrain(cam16.h), cam16.C, t];
 }
 
 // Pre-calculate everything we can with the viewing conditions

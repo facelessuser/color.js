@@ -236,7 +236,7 @@ export function chromaReductionCSS (
 	let max = mappingSpace.coords[indexC];
 
 	let min_inGamut = true;
-	let clipped = clip(clone(origin_OKLCH));
+	let clipped = clip(clone(mappingSpace));
 	let current;
 
 	while ((max - min) > threshold) {
@@ -250,7 +250,7 @@ export function chromaReductionCSS (
 		}
 		else {
 			clipped = clip(current);
-			const E = deltaEOK(clipped, current);
+			const E = deltaE(clipped, current);
 			if (E < JND) {
 				if ((JND - E < ε)) {
 					// match found
