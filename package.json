@@ -62,7 +62,8 @@
 		"watch:html": "npx @11ty/eleventy --config=.eleventy.cjs --watch",
 		"watch:js": "rollup -c --watch",
 		"watch": "run-p watch:*",
-		"prepack": "npm run build"
+		"prepack": "npm run build",
+		"prepublish": "npm run build"
 	},
 	"repository": {
 		"type": "git",
