@@ -92,6 +92,10 @@ const methods = {
 			// Cast a ray from the zero chroma color to the target color.
 			// Trace the line to the RGB cube edge and find where it intersects.
 			// Correct L and h within the perceptual OkLCh after each attempt.
+			// Many times, the color will be on the edge of the gamut shape after expanding,
+			// this will refine the result, but if the chroma is too far out of the shape's
+			// range, this will approximate the proper point on the expanded cube by reducing
+			// chroma. 
 			let achroma = mapColor.set("c", 0).to("p3-linear").coords;
 			let raytrace = methods.raytrace.raytrace_box;
 			let light = mapColor.coords[0];
@@ -112,10 +116,7 @@ const methods = {
 				break;
 			}
 
-			// Many times, the color will be on the edge of the gamut shape after expanding,
-			// this will refine the result, but if the chroma is too far out of the shape's
-			// range, this will approximate the proper point on the expanded cube by reducing
-			// chroma. Afterwards, we scale the color back onto the real gamut shape by
+			// Afterwards, we scale the color back onto the real gamut shape by
 			// projecting the color towards black (near black as the ray tracing algorithm
 			// can count pure black as the nearest intersection sometimes).
 			const mx = bmax[0];
