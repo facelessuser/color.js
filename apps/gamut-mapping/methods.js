@@ -50,6 +50,97 @@ const methods = {
 			return new Color("p3-linear", scaledCoords).to("p3");
 		},
 	},
+	"raytrace2": {
+		label: "Raytrace 2",
+		description: "Like 'Raytrace' but tries to preserve colorfulness of bright colors.",
+		compute: (color) => {
+			if (color.inGamut("p3", { epsilon: 0 })) {
+				return color.to("p3");
+			}
+
+			let mapColor = color.to("oklch");
+			let lightness = mapColor.coords[0];
+
+			if (lightness >= 1) {
+				return new Color({ space: "xyz-d65", coords: WHITES["D65"] }).to("p3");
+			}
+			else if (lightness <= 0) {
+				return new Color({ space: "xyz-d65", coords: [0, 0, 0] }).to("p3");
+			}
+			return methods.raytrace2.trace(mapColor);
+		},
+		trace: (mapColor) => {
+			let gamutColor = mapColor.to("p3-linear");
+
+			let coords = gamutColor.coords;
+			let bmin = [0, 0, 0];
+			let bmax = [1, 1, 1];
+
+			// Scale the gamut in the positive direction to meet the color
+			let max = 0;
+			if (bmax[0] < coords[0]) {
+				max = Math.max(coords[0], max);
+			}
+			if (bmax[1] < coords[1]) {
+				max = Math.max(coords[1], max);
+			}
+			if (bmax[2] < coords[2]) {
+				max = Math.max(coords[2], max);
+			}
+			let bmax2 = (max) ? [max, max, max] : bmax;
+
+			// Cast a ray from the zero chroma color to the target color.
+			// Trace the line to the RGB cube edge and find where it intersects.
+			// Correct L and h within the perceptual OkLCh after each attempt.
+			let achroma = mapColor.set("c", 0).to("p3-linear").coords;
+			let raytrace = methods.raytrace.raytrace_box;
+			let light = mapColor.coords[0];
+			let hue = mapColor.coords[2];
+			for (let i = 0; i < 4; i++) {
+				if (i) {
+					const oklch = gamutColor.oklch;
+					oklch.l = light;
+					oklch.h = hue;
+				}
+				const intersection = raytrace(achroma, gamutColor.coords, bmin, bmax2);
+				if (intersection.length) {
+					gamutColor.setAll(gamutColor.space, intersection);
+					continue;
+				}
+
+				// If there was no change, we are done
+				break;
+			}
+
+			// Many times, the color will be on the edge of the gamut shape after expanding,
+			// this will refine the result, but if the chroma is too far out of the shape's
+			// range, this will approximate the proper point on the expanded cube by reducing
+			// chroma. Afterwards, we scale the color back onto the real gamut shape by
+			// projecting the color towards black (near black as the ray tracing algorithm
+			// can count pure black as the nearest intersection sometimes).
+			const mx = bmax[0];
+			coords = gamutColor.coords;
+			if (max && Math.max(...coords) >= mx) {
+				const intersection = raytrace([1e-12, 1e-12, 1e-12], gamutColor.coords, bmin, bmax);
+				const mx = bmax[0];
+				if (intersection) {
+					coords = intersection;
+				}
+			}
+
+			// Remove noise from floating point math by clipping
+			gamutColor.setAll(
+				gamutColor.space,
+				[
+					util.clamp(0.0, coords[0], 1.0),
+					util.clamp(0.0, coords[1], 1.0),
+					util.clamp(0.0, coords[2], 1.0),
+				],
+			);
+
+			return gamutColor.to("p3");
+		},
+	},
 	"raytrace": {
 		label: "Raytrace",
 		description: "Uses ray tracing to find a color with reduced chroma on the RGB surface.",
@@ -148,6 +239,11 @@ const methods = {
 			// Favor the intersection first in the direction start -> end
 			if (tnear < 0) {
 				tnear = tfar;
+			}
+
+			// Ignore infinite points
+			if (!isFinite(tnear)) {
+				return [];
 			}
 
 			// Calculate nearest intersection via interpolation
