@@ -95,7 +95,7 @@ const methods = {
 			// Many times, the color will be on the edge of the gamut shape after expanding,
 			// this will refine the result, but if the chroma is too far out of the shape's
 			// range, this will approximate the proper point on the expanded cube by reducing
-			// chroma. 
+			// chroma.
 			let achroma = mapColor.set("c", 0).to("p3-linear").coords;
 			let raytrace = methods.raytrace.raytrace_box;
 			let light = mapColor.coords[0];
