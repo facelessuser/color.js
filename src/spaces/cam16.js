@@ -175,12 +175,16 @@ export function environment (
 	const d = discounting
 		? 1
 		: Math.max(Math.min(f * (1 - (1 / 3.6) * Math.exp((-env.la - 42) / 92)), 1), 0);
-	env.dRgb = rgbW.map(c => {
-		return interpolate(1, yw / c, d);
-	});
-	env.dRgbInv = env.dRgb.map(c => {
-		return 1 / c;
-	});
+	env.dRgb = /** @type {[number, number, number]} */ (
+		rgbW.map(c => {
+			return interpolate(1, yw / c, d);
+		})
+	);
+	env.dRgbInv = /** @type {[number, number, number]} */ (
+		env.dRgb.map(c => {
+			return 1 / c;
+		})
+	);
 
 	// Achromatic response
 	const rgbCW = /** @type {[number, number, number]} */ (
@@ -396,8 +400,13 @@ export default new ColorSpace({
 	base: xyz_d65,
 
 	fromBase (xyz) {
+		// If another derivation is created, ε could vary, so we can't hardcode
+		if (this.ε === undefined) {
+			this.ε = Object.values(this.coords)[1].refRange[1] / 100000;
+		}
 		const cam16 = toCam16(xyz, viewingConditions);
-		return [cam16.J, cam16.M, cam16.h];
+		const isAchromatic = Math.abs(cam16.M) < this.ε;
+		return [cam16.J, (isAchromatic) ? 0 : cam16.M, (isAchromatic) ? null : cam16.h];
 	},
 	toBase (cam16) {
 		return fromCam16({ J: cam16[0], M: cam16[1], h: cam16[2] }, viewingConditions);
