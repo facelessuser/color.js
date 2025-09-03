@@ -10,6 +10,7 @@ export { default as RGBColorSpace }       from "./RGBColorSpace.js";
 export { default as hooks, Hooks }        from "./hooks.js";
 export { default as defaults }            from "./defaults.js";
 export { default as getColor }            from "./getColor.js";
+export { default as tryColor }            from "./tryColor.js";
 export { default as get }                 from "./get.js";
 export { default as getAll }              from "./getAll.js";
 export { default as set }                 from "./set.js";
@@ -33,6 +34,10 @@ export *                                  from "./deltaE/index.js";
 export { default as deltaEMethods }       from "./deltaE/index.js";
 export *                                  from "./variations.js";
 export { mix, steps, range, isRange }     from "./interpolation.js";
+
+// Export all color spaces as a single object as well so they can be registered in one go (#661)
+import * as spaces from "./spaces/index-fn.js";
+export { spaces }
 export *                                  from "./spaces/index-fn.js";
 
 // Type re-exports
