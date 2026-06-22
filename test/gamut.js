@@ -9,10 +9,10 @@ export default {
 		let inGamut = this.data.method ? { method: this.data.method } : true;
 		if (this.data.convertAfter) {
 			return color
-				.toGamut({ space: this.data.toSpace, method: this.data.method })
+				.toGamut({ space: this.data.toSpace || color.space, method: this.data.method })
 				.to(this.data.toSpace);
 		}
-		let color2 = color.to(this.data.toSpace, { inGamut });
+		let color2 = color.to(this.data.toSpace || color.space, { inGamut });
 		return color2;
 	},
 	map (c) {
@@ -115,6 +115,107 @@ export default {
 				{
 					args: ["hsl(360 50% 50%)"],
 					expect: "hsl(360 50% 50%)",
+				},
+			],
+		},
+		{
+			name: "P3 primaries to sRGB, Ray Trace algorithm",
+			data: { toSpace: "srgb-linear", method: "raytrace" },
+			tests: [
+				{
+					args: ["color(display-p3 1 0 0)"],
+					expect: "color(srgb-linear 1 0.0342 0.02168)",
+				},
+				{
+					args: ["color(display-p3 0 1 0)"],
+					expect: "color(srgb-linear 0 0.92946 0.07742)",
+				},
+				{
+					args: ["color(display-p3 0 0 1)"],
+					expect: "color(srgb-linear 0 0.01714 0.97711)",
+				},
+				{
+					args: ["color(display-p3 1 1 0)"],
+					expect: "color(srgb-linear 0.98002 0.99395 0)",
+				},
+
+				{
+					args: ["color(display-p3 0 1 1)"],
+					expect: "color(srgb-linear 0 0.96255 0.93527)",
+				},
+				{
+					args: ["color(display-p3 1 0 1)"],
+					expect: "color(srgb-linear 1 0.07188 0.87704)",
+				},
+			],
+		},
+		{
+			name: "P3 to sRGB whites/blacks, Ray Trace algorithm",
+			data: { toSpace: "srgb-linear" , method: "raytrace" },
+			tests: [
+				{
+					args: ["color(display-p3 1 1 1)"],
+					expect: "color(srgb-linear 1 1 1)",
+				},
+				{
+					args: ["color(display-p3 2 0 1)"],
+					expect: "color(srgb-linear 1 1 1)",
+				},
+				{
+					args: ["color(display-p3 0 0 0)"],
+					expect: "color(srgb-linear 0 0 0)",
+				},
+				{
+					args: ["color(display-p3 -1 0 0)"],
+					expect: "color(srgb-linear 0 0 0)",
+				},
+			],
+		},
+		{
+			name: "Misc Conversions, Ray Trace algorithm",
+			data: { method: "raytrace" },
+			tests: [
+				{
+					args: ["color(--hpluv 50 110 50)"],
+					expect: "color(--hpluv 50.737 100 50.044)",
+				},
+				{
+					args: ["color(--okhsv 50 1.1 0.5)"],
+					expect: "color(--okhsv 50 1 0.48745)",
+				},
+				{
+					args: ["color(rec2100-hlg 0.85655 -0.63822 -0.28243)"],
+					expect: "color(rec2100-hlg 0.85655 0.61287 0.28243)",
+				},
+			],
+		},
+		{
+			name: "Maintains alpha, Ray Trace algorithm",
+			data: { toSpace: "srgb-linear", method: "raytrace", checkAlpha: true },
+			tests: [
+				{
+					args: ["color(display-p3 1 1 1 / 1)"],
+					expect: "color(srgb-linear 1 1 1)",
+				},
+				{
+					args: ["color(display-p3 1 1 1 / 0.5)"],
+					expect: "color(srgb-linear 1 1 1 / 0.5)",
+				},
+				{
+					args: ["color(display-p3 1 1 1 / 0)"],
+					expect: "color(srgb-linear 1 1 1 / 0)",
+				},
+				{
+					args: ["color(display-p3 1 0 0 / 1)"],
+					expect: "color(srgb-linear 1 0.0342 0.02168)",
+				},
+				{
+					args: ["color(display-p3 1 0 0 / 0.5)"],
+					expect: "color(srgb-linear 1 0.0342 0.02168 / 0.5)",
+				},
+				{
+					args: ["color(display-p3 1 0 0 / 0)"],
+					expect: "color(srgb-linear 1 0.0342 0.02168 / 0)",
 				},
 			],
 		},
@@ -254,11 +355,11 @@ export default {
 				},
 				{
 					args: ["color(--hct 282.762176394358 87.22803916105873 25)"],
-					expect: "rgb(0% 0.10802% 80.421%)",
+					expect: "rgb(0% 0.22758% 80.356%)",
 				},
 				{
 					args: ["color(--hct 282.762176394358 87.22803916105873 30)"],
-					expect: "rgb(0% 0% 93.775%)",
+					expect: "rgb(0% 0.10274% 93.718%)",
 				},
 				{
 					args: ["color(--hct 282.762176394358 87.22803916105873 35)"],

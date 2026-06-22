@@ -20,10 +20,31 @@ export default class ColorSpace {
 		this.name = options.name;
 		this.base = options.base ? ColorSpace.get(options.base) : null;
 		this.aliases = options.aliases;
+		this.displaySpaces = options.displaySpaces?.map(space => ColorSpace.get(space));
+
+		// This space's ancestors, closest first (immediate base → root), excluding the space itself.
+		this.bases = [];
+		for (let base = this.base; base; base = base.base) {
+			this.bases.push(base);
+		}
+
+		if (options.rgbGamut) {
+			this.rgbGamut = options.rgbGamut;
+		}
+
+		if (options.linearGamut) {
+			this.linearGamut = options.linearGamut;
+		}
 
 		if (this.base) {
-			this.fromBase = options.fromBase;
-			this.toBase = options.toBase;
+			// Keep a subclass's own methods if the options don't override them
+			if (options.fromBase) {
+				this.fromBase = options.fromBase;
+			}
+
+			if (options.toBase) {
+				this.toBase = options.toBase;
+			}
 		}
 
 		// Coordinate metadata
@@ -83,6 +104,10 @@ export default class ColorSpace {
 				return true;
 			};
 		}
+
+		// Matrices used by this color space, exposed so that consumer code
+		// can reuse them instead of duplicating the data. E.g. `this.M.toXYZ`.
+		this.M = options.M ?? {};
 
 		// Other stuff
 		this.referred = options.referred;

@@ -152,6 +152,54 @@ const tests = {
 			],
 		},
 		{
+			name: "P3 to HSL P3",
+			data: {
+				toSpace: "hsl-p3",
+			},
+			tests: [
+				{
+					args: "color(display-p3 1 0 0)",
+					expect: [0, 100, 50],
+				},
+				{
+					args: "color(display-p3 0.5 0.2 0.7)",
+					expect: [276, 55.55555555555556, 44.99999999999999],
+				},
+				{
+					args: "color(display-p3 1 1 1)",
+					expect: [null, 0, 100],
+				},
+				{
+					args: "color(display-p3 0 0 0)",
+					expect: [null, 0, 0],
+				},
+				{
+					args: ["color(--hsl-p3 276 55 45)", "p3"],
+					expect: [0.49949999999999983, 0.20249999999999999, 0.6975],
+				},
+			],
+		},
+		{
+			name: "Rec.2020 to HSL Rec.2020",
+			data: {
+				toSpace: "hsl-rec2020",
+			},
+			tests: [
+				{
+					args: "color(rec2020 0 0 1)",
+					expect: [240, 100, 50],
+				},
+				{
+					args: "color(rec2020 0.5 0.2 0.7)",
+					expect: [276, 55.55555555555556, 44.99999999999999],
+				},
+				{
+					args: ["color(--hsl-rec2020 240 80 30)", "rec2020"],
+					expect: [0.06, 0.06, 0.54],
+				},
+			],
+		},
+		{
 			name: "P3 to sRGB",
 			data: {
 				toSpace: "srgb",
@@ -454,6 +502,167 @@ const tests = {
 					name: "sRGB blue (D65) to OKlch",
 					args: "blue",
 					expect: [0.45201371817442365, 0.3132143886344849, 264.0520226163699],
+				},
+			],
+		},
+		{
+			name: "Helmlab MetricSpace (helmlab-metric)",
+			description:
+				"Conversions tested against the reference Python implementation (arXiv:2602.23010). " +
+				"Helmlab MetricSpace is the perceptual forward space behind deltaEHelmlab; its coordinates " +
+				"are tuned for ΔE accuracy, so the ab plane is asymmetric and L exceeds 1 for high-chroma " +
+				"colors due to the Helmholtz–Kohlrausch boost. For author-friendly authoring use HelmGen.",
+			data: {
+				toSpace: "helmlab-metric",
+			},
+			tests: [
+				{
+					name: "sRGB white to Helmlab MetricSpace",
+					args: "white",
+					expect: [1.1211, 0.1016, 0.2004],
+				},
+				{
+					name: "sRGB black to Helmlab MetricSpace",
+					args: "black",
+					expect: [0, 0, 0],
+				},
+				{
+					name: "sRGB red to Helmlab MetricSpace",
+					args: "red",
+					expect: [0.9207, 0.9408, -0.2063],
+				},
+				{
+					name: "sRGB lime to Helmlab MetricSpace",
+					args: "lime",
+					expect: [0.7406, -0.1547, 0.8917],
+				},
+				{
+					name: "sRGB blue to Helmlab MetricSpace",
+					args: "blue",
+					expect: [0.7623, -0.1254, -0.2026],
+				},
+				{
+					name: "sRGB cyan to Helmlab MetricSpace",
+					args: "cyan",
+					expect: [0.8825, -0.1670, 0.2246],
+				},
+				{
+					name: "sRGB magenta to Helmlab MetricSpace",
+					args: "magenta",
+					expect: [1.3271, 0.0946, -0.0781],
+				},
+				{
+					name: "sRGB yellow to Helmlab MetricSpace",
+					args: "yellow",
+					expect: [0.8998, 0.1779, 0.8760],
+				},
+			],
+		},
+		{
+			name: "Helmlab MetricSpace round-trip",
+			description:
+				"sRGB → helmlab-metric → sRGB round-trip precision",
+			data: {
+				epsilon: 0.00001,
+				toSpace: "srgb",
+			},
+			tests: [
+				{
+					name: "red round-trip",
+					args: "color(--helmlab-metric 0.9207026558964019 0.9408381838264792 -0.2063029789974532)",
+					expect: [1, 0, 0],
+				},
+				{
+					name: "lime round-trip",
+					args: "color(--helmlab-metric 0.7405738192322576 -0.1547420561604902 0.8916832804475869)",
+					expect: [0, 1, 0],
+				},
+				{
+					name: "blue round-trip",
+					args: "color(--helmlab-metric 0.7623128436110738 -0.12540848957779177 -0.2026289423898374)",
+					expect: [0, 0, 1],
+				},
+			],
+		},
+		{
+			name: "HelmGen (GenSpace)",
+			description:
+				"Conversions tested against the reference Python implementation (v0.11.1, arXiv:2602.23010)",
+			data: {
+				toSpace: "helmgen",
+				epsilon: 0.001,
+			},
+			tests: [
+				{
+					name: "sRGB white to HelmGen",
+					args: "white",
+					expect: [1, 0, 0],
+				},
+				{
+					name: "sRGB black to HelmGen",
+					args: "black",
+					expect: [0, 0, 0],
+				},
+				{
+					name: "sRGB red to HelmGen",
+					args: "red",
+					expect: [0.5632, 0.2947, 0.1855],
+				},
+				{
+					name: "sRGB lime to HelmGen",
+					args: "lime",
+					expect: [0.8464, -0.2935, 0.3038],
+				},
+				{
+					name: "sRGB blue to HelmGen",
+					args: "blue",
+					expect: [0.3649, -0.0419, -0.4935],
+				},
+				{
+					name: "sRGB cyan to HelmGen",
+					args: "cyan",
+					expect: [0.8941, -0.1948, -0.0519],
+				},
+				{
+					name: "sRGB magenta to HelmGen",
+					args: "magenta",
+					expect: [0.6504, 0.3528, -0.2826],
+				},
+				{
+					name: "sRGB yellow to HelmGen",
+					args: "yellow",
+					expect: [0.9648, -0.0849, 0.3222],
+				},
+			],
+		},
+		{
+			name: "HelmGen round-trip",
+			description:
+				"sRGB → HelmGen → sRGB round-trip precision",
+			data: {
+				epsilon: 0.0001,
+				toSpace: "srgb",
+			},
+			tests: [
+				{
+					name: "red round-trip",
+					args: "color(--helmgen 0.5632131107240752 0.2947101822854279 0.18550861379352682)",
+					expect: [1, 0, 0],
+				},
+				{
+					name: "lime round-trip",
+					args: "color(--helmgen 0.8464016664579433 -0.29347462054573664 0.3038167918268071)",
+					expect: [0, 1, 0],
+				},
+				{
+					name: "blue round-trip",
+					args: "color(--helmgen 0.36490755151428245 -0.041894440921247146 -0.4935191514496566)",
+					expect: [0, 0, 1],
+				},
+				{
+					name: "slategray round-trip",
+					args: "color(--helmgen 0.5228833483854843 -0.015067664715219073 -0.047673261868822196)",
+					expect: [0.43922, 0.50196, 0.56471],
 				},
 			],
 		},
@@ -1067,6 +1276,266 @@ const tests = {
 					name: "sRGB black to Okhsl",
 					args: "black",
 					expect: [null, 0.0, 0.0],
+				},
+			],
+		},
+		{
+			name: "OKLCh P3",
+			data: {
+				toSpace: "oklch-p3",
+			},
+			tests: [
+				{
+					name: "P3 red to OKLCh P3 (c = 1 at gamut boundary)",
+					args: "color(display-p3 1 0 0)",
+					expect: [0.648574075144298, 1, 28.958132730803925],
+				},
+				{
+					name: "P3 green to OKLCh P3 (c = 1 at gamut boundary)",
+					args: "color(display-p3 0 1 0)",
+					expect: [0.8488292928532466, 1, 145.64495558662838],
+				},
+				{
+					name: "P3 blue to OKLCh P3 (c = 1 at gamut boundary)",
+					args: "color(display-p3 0 0 1)",
+					expect: [0.4663605403954785, 1, 264.05202261636987],
+				},
+				{
+					name: "sRGB red to OKLCh P3 (inside gamut, c < 1)",
+					args: "red",
+					expect: [0.6279553639214311, 0.8958086645647698, 29.23388027962784],
+				},
+				{
+					name: "white to OKLCh P3",
+					args: "white",
+					expect: [1.0000000000000002, 0, null],
+				},
+				{
+					name: "black to OKLCh P3",
+					args: "black",
+					expect: [0, 0, null],
+				},
+			],
+		},
+		{
+			name: "OKLCh sRGB",
+			data: {
+				toSpace: "oklch-srgb",
+			},
+			tests: [
+				{
+					name: "sRGB red to OKLCh sRGB (c = 1 at gamut boundary)",
+					args: "color(srgb 1 0 0)",
+					expect: [0.6279553639214311, 1, 29.23388027962784],
+				},
+				{
+					name: "sRGB green to OKLCh sRGB (c = 1 at gamut boundary)",
+					args: "color(srgb 0 1 0)",
+					expect: [0.8664396175234368, 1, 142.4953450414439],
+				},
+				{
+					// OKLab is non-convex near blue: the blue primary's chroma exceeds the highest
+					// *contiguous* in-gamut chroma at its lightness and hue, so it normalizes to c > 1.
+					name: "sRGB blue to OKLCh sRGB (past the non-convex gap, c > 1)",
+					args: "color(srgb 0 0 1)",
+					expect: [0.45201371817442365, 1.1792451179341639, 264.0520226163699],
+				},
+				{
+					name: "white to OKLCh sRGB",
+					args: "white",
+					expect: [1.0000000000000002, 0, null],
+				},
+				{
+					name: "black to OKLCh sRGB",
+					args: "black",
+					expect: [0, 0, null],
+				},
+			],
+		},
+		{
+			name: "OKLCh Rec.2020",
+			data: {
+				toSpace: "oklch-rec2020",
+			},
+			tests: [
+				{
+					name: "Rec.2020 red to OKLCh Rec.2020 (c = 1 at gamut boundary)",
+					args: "color(rec2020 1 0 0)",
+					expect: [0.6870890420051189, 1, 24.186137422386764],
+				},
+				{
+					name: "Rec.2020 green to OKLCh Rec.2020 (c = 1 at gamut boundary)",
+					args: "color(rec2020 0 1 0)",
+					expect: [0.8297772177206372, 1, 152.5950553215257],
+				},
+				{
+					// As with sRGB, the Rec.2020 blue primary's chroma exceeds the highest contiguous
+					// in-gamut chroma at its lightness and hue, so it normalizes to c > 1.
+					name: "Rec.2020 blue to OKLCh Rec.2020 (past the non-convex gap, c > 1)",
+					args: "color(rec2020 0 0 1)",
+					expect: [0.4234482566052168, 1.1564656671286049, 245.0667522688908],
+				},
+				{
+					name: "sRGB red to OKLCh Rec.2020 (inside gamut, c < 1)",
+					args: "red",
+					expect: [0.6279553639214311, 0.9016993654016126, 29.23388027962784],
+				},
+				{
+					name: "white to OKLCh Rec.2020",
+					args: "white",
+					expect: [1.0000000000000002, 0, null],
+				},
+				{
+					name: "black to OKLCh Rec.2020",
+					args: "black",
+					expect: [0, 0, null],
+				},
+			],
+		},
+		{
+			name: "LCH P3",
+			data: {
+				toSpace: "lch-p3",
+			},
+			tests: [
+				{
+					name: "P3 red to LCH P3 (c = 1 at gamut boundary)",
+					args: "color(display-p3 1 0 0)",
+					expect: [56.20777291693605, 1, 46.31179560242191],
+				},
+				{
+					name: "P3 green to LCH P3 (c = 1 at gamut boundary)",
+					args: "color(display-p3 0 1 0)",
+					expect: [86.61398845512865, 1, 136.00347158840725],
+				},
+				{
+					name: "P3 blue to LCH P3 (c = 1 at gamut boundary)",
+					args: "color(display-p3 0 0 1)",
+					expect: [31.014630488881345, 1, 301.3642677330783],
+				},
+				{
+					name: "sRGB red to LCH P3 (inside gamut, c < 1)",
+					args: "red",
+					expect: [54.29054140467191, 0.8783067868668882, 40.85765650501162],
+				},
+				{
+					name: "white to LCH P3",
+					args: "white",
+					expect: [100, 0, null],
+				},
+				{
+					name: "black to LCH P3",
+					args: "black",
+					expect: [0, 0, null],
+				},
+			],
+		},
+		{
+			name: "LCH sRGB",
+			data: {
+				toSpace: "lch-srgb",
+			},
+			tests: [
+				{
+					name: "sRGB red to LCH sRGB (c = 1 at gamut boundary)",
+					args: "color(srgb 1 0 0)",
+					expect: [54.29054140467191, 1, 40.85765650501162],
+				},
+				{
+					name: "sRGB green to LCH sRGB (c = 1 at gamut boundary)",
+					args: "color(srgb 0 1 0)",
+					expect: [87.81853436502792, 1, 134.38385636182164],
+				},
+				{
+					// Unlike OKLab, CIELAB's blue primary lies on the contiguous boundary, so c = 1.
+					name: "sRGB blue to LCH sRGB (c = 1 at gamut boundary)",
+					args: "color(srgb 0 0 1)",
+					expect: [29.56830197909668, 1, 301.3642677330783],
+				},
+				{
+					name: "white to LCH sRGB",
+					args: "white",
+					expect: [100, 0, null],
+				},
+				{
+					name: "black to LCH sRGB",
+					args: "black",
+					expect: [0, 0, null],
+				},
+			],
+		},
+		{
+			name: "LCH Rec.2020",
+			data: {
+				toSpace: "lch-rec2020",
+			},
+			tests: [
+				{
+					name: "Rec.2020 red to LCH Rec.2020 (c = 1 at gamut boundary)",
+					args: "color(rec2020 1 0 0)",
+					expect: [59.80362999261423, 1, 42.40709789518638],
+				},
+				{
+					name: "Rec.2020 green to LCH Rec.2020 (c = 1 at gamut boundary)",
+					args: "color(rec2020 0 1 0)",
+					expect: [85.77179450195095, 1, 145.7956011566357],
+				},
+				{
+					name: "Rec.2020 blue to LCH Rec.2020 (c = 1 at gamut boundary)",
+					args: "color(rec2020 0 0 1)",
+					expect: [25.449494122665456, 1, 300.52682805702216],
+				},
+				{
+					name: "sRGB red to LCH Rec.2020 (inside gamut, c < 1)",
+					args: "red",
+					expect: [54.29054140467191, 0.7454923012268442, 40.85765650501162],
+				},
+				{
+					name: "white to LCH Rec.2020",
+					args: "white",
+					expect: [100, 0, null],
+				},
+				{
+					name: "black to LCH Rec.2020",
+					args: "black",
+					expect: [0, 0, null],
+				},
+			],
+		},
+		{
+			name: "Gamut-relative none handling",
+			description:
+				"Chroma is a fraction of maxChroma(l, h), so toBase()/fromBase() drop it to none when lightness or hue is none — except a zero chroma (achromatic) stays zero.",
+			tests: [
+				{
+					name: "toBase() drops chroma to none when hue is none",
+					run: () => Color.spaces["oklch-p3"].toBase([0.5, 0.5, null]),
+					expect: [0.5, null, null],
+				},
+				{
+					name: "toBase() drops chroma to none when lightness is none",
+					run: () => Color.spaces["oklch-p3"].toBase([null, 0.5, 200]),
+					expect: [null, null, 200],
+				},
+				{
+					name: "toBase() keeps a none chroma as none",
+					run: () => Color.spaces["oklch-p3"].toBase([0.5, null, 200]),
+					expect: [0.5, null, 200],
+				},
+				{
+					name: "toBase() keeps achromatic (zero chroma) when hue is none",
+					run: () => Color.spaces["oklch-p3"].toBase([0.5, 0, null]),
+					expect: [0.5, 0, null],
+				},
+				{
+					name: "fromBase() drops chroma to none when hue is none",
+					run: () => Color.spaces["oklch-p3"].fromBase([0.5, 0.1, null]),
+					expect: [0.5, null, null],
+				},
+				{
+					name: "fromBase() keeps achromatic (zero chroma) when hue is none (LCH base)",
+					run: () => Color.spaces["lch-srgb"].fromBase([50, 0, null]),
+					expect: [50, 0, null],
 				},
 			],
 		},
